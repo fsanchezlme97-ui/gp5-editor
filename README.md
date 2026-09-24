@@ -20,6 +20,22 @@ Se levanta un servidor local en `http://127.0.0.1:5757` y la app se abre en Chro
 ventana propia. Para apagarla, cierra la ventana negra. La carpeta `dist/GP-5 Web` completa es
 portable: puedes copiarla a una memoria USB o a otro equipo.
 
+## Capturas
+
+**Editor:** pedalboard con los 10 bloques y edición en vivo de cada parámetro.
+
+![Editor con el pedalboard y los parámetros del amplificador](docs/screenshots/editor.png)
+
+**Selector de modelos:** búsqueda por nombre o por el equipo real que imita.
+
+![Selector de modelos buscando "fender"](docs/screenshots/modelos.png)
+
+**Crear con IA:** escribes una canción y la IA diseña el preset, con el equipo original, consejos para tocarlo y el detalle de cada bloque. En estas capturas el resultado es un ejemplo.
+
+![Resultado de Crear con IA](docs/screenshots/ia.png)
+
+![Detalle de la cadena creada con IA](docs/screenshots/ia-detalle.png)
+
 **Descarga para Windows:** en la sección **Releases** del repositorio, baja `GP-5-Web.zip`,
 descomprímelo y abre `GP-5 Web.exe`.
 
