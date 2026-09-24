@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>GP-5 probe</title></head>
+<body>
+<script src="lib/prst.js"></script>
+<script src="lib/patchlib.js"></script>
+<script src="lib/webmidi_device.js"></script>
+<script>
+// Read-only diagnostic (npm run probe): never selects, edits or writes.
+(async () => {
+  const log = (...a) => console.log(a.map((x) => (typeof x === "string" ? x : JSON.stringify(x))).join(" "));
+  const hex = (a) => Array.from(a).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+  try {
+    const access = await navigator.requestMIDIAccess({ sysex: true });
+    log("inputs:", [...access.inputs.values()].map((p) => p.name));
+    log("outputs:", [...access.outputs.values()].map((p) => p.name));
+    const dev = await WebMidiDevice.connect();
+    log("connected:", dev);
+    const names = await WebMidiDevice.readNames();
+    log("names:", names.length, names.slice(0, 12).map((n) => `${n.slot}:${n.name}`).join(" | "));
+    const cur = await WebMidiDevice.readBankBlob(0x43);
+    log("current-patch blob (0x43):", cur.length, hex(cur));
+    const prst = await WebMidiDevice.readActivePrst("active");
+    log("active prst bytes:", prst.length);
+    const ring = await (await fetch(`data/${PRST.profileFor(dev.key).ringFile}`)).json();
+    const lib = PatchLib.make(ring, {}, PRST.profileFor(dev.key));
+    const inv = lib.inventory([{ slot: 0, bytes: prst }]);
+    const p = inv.patches[0];
+    log("order:", p.order);
+    for (const b of p.blocks) log(" ", b.block, b.active ? "ON " : "off", b.fxid.toString(16), b.model, b.params.map((x) => `${x.name}=${x.display}`).join(", "));
+    const st = await WebMidiDevice.readBankBlob(0x24);
+    const ir = await WebMidiDevice.readBankBlob(0x20);
+    log("snaptone blob:", st.length, "ir blob:", ir.length);
+  } catch (e) {
+    log("ERROR:", e.message);
+  }
+  log("PROBE DONE");
+})();
+</script>
+</body>
+</html>

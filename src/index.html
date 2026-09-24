@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' file: https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:">
+  <title>GP-5 Editor</title>
+  <link rel="icon" href="icon-16.png" sizes="16x16" type="image/png">
+  <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="icon-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="brand">
+        <img class="brand-mark" src="logo.png" alt="" width="40" height="40">
+        <div>
+          <div class="brand-name">GP-5 Editor</div>
+          <div id="conn" class="conn off"><span class="dot"></span><span id="conn-text">Sin conexión</span></div>
+        </div>
+      </div>
+      <div class="search-wrap">
+        <i data-icon="magnifying-glass" class="search-ico"></i>
+        <input id="search" type="search" placeholder="Buscar preset" autocomplete="off">
+      </div>
+      <ul id="preset-list" tabindex="0" aria-label="Presets"></ul>
+      <div class="side-actions">
+        <button id="btn-backup" class="btn tonal" disabled title="Guarda los 100 presets como archivos .prst">
+          <i data-icon="archive-box-arrow-down"></i><span>Respaldar todo</span>
+        </button>
+        <button id="btn-open-backups" class="btn icon" title="Abrir carpeta de respaldos"><i data-icon="folder-open"></i></button>
+      </div>
+    </aside>
+
+    <main id="main">
+      <header id="topbar">
+        <div class="patch-id">
+          <button id="btn-prev" class="btn icon" title="Preset anterior (↑)" disabled><i data-icon="chevron-left"></i></button>
+          <span id="patch-num">--</span>
+          <button id="btn-next" class="btn icon" title="Preset siguiente (↓)" disabled><i data-icon="chevron-right"></i></button>
+          <input id="patch-name" maxlength="16" spellcheck="false" disabled placeholder="Nombre del preset" title="Renombrar (se aplica al guardar)">
+        </div>
+        <div class="top-actions">
+          <span id="dirty" class="dirty" hidden><span class="pip"></span>Cambios sin guardar</span>
+          <button id="btn-discard" class="btn text" hidden title="Vuelve a cargar el preset guardado">
+            <i data-icon="arrow-uturn-left"></i><span>Descartar</span>
+          </button>
+          <button id="btn-save" class="btn primary" hidden title="Ctrl+S">
+            <i data-icon="check"></i><span>Guardar en el pedal</span>
+          </button>
+          <button id="btn-ai" class="btn tonal" title="Crear un preset para una canción con Claude">
+            <i data-icon="sparkles"></i><span>Crear con IA</span>
+          </button>
+          <span class="sep"></span>
+          <button id="btn-import" class="btn text" disabled title="Escuchar o escribir archivos .prst en el pedal">
+            <i data-icon="folder-arrow-down"></i><span>Subir presets</span>
+          </button>
+          <button id="btn-export" class="btn text" disabled title="Guardar el preset actual como archivo">
+            <i data-icon="arrow-down-tray"></i><span>Exportar</span>
+          </button>
+          <button id="btn-refresh" class="btn icon" disabled title="Volver a leer del pedal (F5)"><i data-icon="arrow-path"></i></button>
+          <button id="btn-help" class="btn icon" title="Atajos de teclado (?)"><i data-icon="question-mark-circle"></i></button>
+        </div>
+      </header>
+
+      <section id="welcome">
+        <div class="welcome-card">
+          <img class="welcome-logo" src="icon-256.png" alt="" width="128" height="128">
+          <h1>Conecta tu Valeton GP-5</h1>
+          <p id="welcome-msg">Conecta el pedal por USB. Si Valeton Suite está abierto, ciérralo: solo una app puede usar el puerto MIDI a la vez.</p>
+          <button id="btn-connect" class="btn primary"><i data-icon="bolt"></i><span>Conectar</span></button>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div id="board">
+          <div id="chain" aria-label="Cadena de efectos"></div>
+        </div>
+
+        <div id="editor" class="card">
+          <div id="block-head">
+            <div id="block-badge" class="badge"></div>
+            <div class="block-titles">
+              <div id="block-title"></div>
+              <button id="model-btn" class="model-btn" title="Cambiar modelo (Enter)">
+                <span id="model-name"></span>
+                <span id="model-origin"></span>
+                <i data-icon="chevron-down" class="caret"></i>
+              </button>
+            </div>
+            <label class="switch big" title="Encender / apagar bloque (Espacio)">
+              <input id="block-on" type="checkbox">
+              <span class="track"><span class="thumb"></span></span>
+            </label>
+          </div>
+          <div id="params"></div>
+        </div>
+
+        <div id="patch-settings" class="card">
+          <div class="ps-title">Preset</div>
+          <div id="ps-params"></div>
+          <p class="hint"><i data-icon="information-circle"></i><span>Volumen, BPM y nombre se aplican al pulsar <b>Guardar en el pedal</b>. Los cambios de efectos se escuchan al instante.</span></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="picker" class="overlay" hidden>
+    <div class="picker-card">
+      <div class="picker-head">
+        <div class="search-wrap grow">
+          <i data-icon="magnifying-glass" class="search-ico"></i>
+          <input id="picker-search" type="search" placeholder="Buscar modelo o equipo real" autocomplete="off">
+        </div>
+        <button id="picker-close" class="btn icon" title="Cerrar (Esc)"><i data-icon="x-mark"></i></button>
+      </div>
+      <div id="picker-list"></div>
+    </div>
+  </div>
+
+  <div id="modal" class="overlay" hidden>
+    <div class="modal-card">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+      <div id="modal-progress" hidden><div class="bar"><div id="modal-bar"></div></div><div id="modal-progress-text"></div></div>
+      <div id="modal-actions"></div>
+    </div>
+  </div>
+
+
+  <div id="ai" class="overlay" hidden>
+    <div class="ai-card">
+      <div class="ai-head">
+        <div class="ai-title"><i data-icon="sparkles"></i><span>Crear preset con IA</span></div>
+        <button id="ai-close" class="btn icon" title="Cerrar (Esc)"><i data-icon="x-mark"></i></button>
+      </div>
+
+      <div class="ai-body">
+        <div id="ai-prov-summary" class="ai-prov-summary">
+          <i data-icon="cpu-chip"></i><span id="ai-prov-text"></span>
+          <button id="ai-prov-edit" class="btn text sm">Cambiar</button>
+        </div>
+        <div id="ai-prov-form" class="ai-prov-form" hidden>
+          <div class="ai-row">
+            <label class="field"><span>Proveedor de IA</span><select id="ai-prov"></select></label>
+            <label class="field"><span>Modelo</span><select id="ai-model"></select></label>
+          </div>
+          <p id="ai-prov-hint" class="ai-hint"></p>
+          <label class="field" id="ai-key-field"><span>Clave de API (se guarda solo en este equipo)</span>
+            <input id="ai-key" type="password" form="ai-key-form" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu clave"></label>
+          <label class="field" id="ai-base-field" hidden><span>URL base</span>
+            <input id="ai-base" class="ai-input" autocomplete="off" spellcheck="false"></label>
+          <div class="ai-actions">
+            <span id="ai-prov-status" class="ai-muted"></span>
+            <button id="ai-prov-cancel" class="btn text">Cerrar</button>
+            <button id="ai-prov-save" class="btn primary">Guardar y cargar modelos</button>
+          </div>
+        </div>
+
+        <div id="ai-form">
+          <label class="field"><span>Canción, artista o sonido</span>
+            <input id="ai-song" class="ai-input" placeholder="Ej.: Comfortably Numb (solo) - Pink Floyd" autocomplete="off"></label>
+          <div class="ai-row">
+            <label class="field"><span>Pastillas de tu guitarra</span>
+              <select id="ai-pickups">
+                <option>Humbuckers</option>
+                <option>Single coil</option>
+                <option>P-90</option>
+                <option>Mixta (HSS / HSH)</option>
+                <option>Bajo eléctrico</option>
+              </select></label>
+            <label class="field"><span>Reemplazar el preset</span><select id="ai-slot"></select></label>
+          </div>
+          <label class="field"><span>Notas (opcional)</span>
+            <input id="ai-notes" class="ai-input" placeholder="Ej.: solo la parte limpia, para tocar en casa a bajo volumen" autocomplete="off"></label>
+          <div class="ai-actions">
+            <span class="ai-model"><span id="ai-footer-model"></span> · tus SnapTones e IRs incluidos</span>
+            <button id="ai-go" class="btn primary"><i data-icon="sparkles"></i><span>Crear preset</span></button>
+          </div>
+        </div>
+
+        <div id="ai-busy" hidden>
+          <div class="ai-spinner"></div>
+          <div id="ai-busy-text"></div>
+          <div id="ai-busy-model" class="ai-muted"></div>
+          <div id="ai-busy-count" class="ai-muted"></div>
+          <button id="ai-cancel" class="btn text">Cancelar</button>
+        </div>
+
+        <div id="ai-result" hidden>
+          <div class="ai-res-head">
+            <div>
+              <div id="ai-res-name" class="ai-res-name"></div>
+              <div id="ai-res-song" class="ai-muted"></div>
+            </div>
+            <button id="ai-new" class="btn text sm"><i data-icon="arrow-path"></i><span>Otra canción</span></button>
+          </div>
+          <div id="ai-res-meta" class="ai-meta"></div>
+          <p id="ai-res-summary" class="ai-summary"></p>
+          <div class="ai-notes">
+            <div id="ai-gear" class="ai-note" hidden>
+              <div class="ai-note-title"><i data-icon="musical-note"></i><span>Equipo original</span></div>
+              <p id="ai-gear-text"></p>
+            </div>
+            <div id="ai-tips" class="ai-note" hidden>
+              <div class="ai-note-title"><i data-icon="information-circle"></i><span>Consejos para tocarlo</span></div>
+              <p id="ai-tips-text"></p>
+            </div>
+          </div>
+          <div id="ai-board" class="ai-board" title="Toca un bloque para ver su detalle"></div>
+          <p id="ai-warn" class="ai-warn" hidden></p>
+          <div class="ai-section-title">Detalle de la cadena</div>
+          <div id="ai-blocks" class="ai-blocks"></div>
+          <div class="ai-inline">
+            <input id="ai-refine" class="ai-input" placeholder="Ajustar: más ganancia, menos reverb, delay más largo…" autocomplete="off">
+            <button id="ai-refine-go" class="btn">Ajustar</button>
+          </div>
+          <div class="ai-actions">
+            <label class="ai-dest"><span>Destino</span><select id="ai-slot-res"></select></label>
+            <button id="ai-listen" class="btn" title="Carga el preset en el pedal sin guardarlo">Escuchar sin guardar</button>
+            <button id="ai-save" class="btn primary"><i data-icon="check"></i><span>Guardar en el pedal</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="drop" hidden><div class="drop-card"><i data-icon="folder-arrow-down"></i><span>Suelta los presets .prst para subirlos al pedal</span></div></div>
+
+  <form id="ai-key-form" hidden onsubmit="return false"></form>
+  <div id="toasts"></div>
+
+  <script src="ui/icons.js"></script>
+  <script src="lib/prst.js"></script>
+  <script src="lib/patchlib.js"></script>
+  <script src="lib/webmidi_device.js"></script>
+  <script src="lib/webmidi_write.js"></script>
+  <script src="lib/gp5_commands.js"></script>
+  <script src="ui/controls.js"></script>
+  <script src="platform.js"></script>
+  <script src="ui/pedals.js"></script>
+  <script src="lib/anthropic-sdk.js"></script>
+  <script src="ai_providers.js"></script>
+  <script src="ai.js"></script>
+  <script src="app.js"></script>
+  <script src="ui/ai_panel.js"></script>
+</body>
+</html>

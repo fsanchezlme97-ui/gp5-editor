@@ -1,0 +1,29 @@
+{
+  "name": "gp5-editor",
+  "version": "0.6.0",
+  "description": "Editor web para Valeton GP-5 / GP-50 (Chrome/Edge, Web MIDI)",
+  "scripts": {
+    "start": "node serve.js",
+    "web": "node serve.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "probe": "node tools/browser.js --page=probe.html",
+    "probe:edit": "node tools/browser.js --page=probe_edit.html",
+    "icons": "node scripts/build_icons.js",
+    "build:sdk": "esbuild scripts/anthropic_entry.mjs --bundle --format=iife --platform=browser --minify --legal-comments=eof --outfile=src/lib/anthropic-sdk.js",
+    "build": "node scripts/build_web.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "esbuild": "^0.28.2",
+    "heroicons": "^2.2.0",
+    "postject": "^1.0.0-alpha.6",
+    "puppeteer-core": "^24.43.1",
+    "rcedit": "^4.0.1"
+  },
+  "author": "fsanchezlme97-ui",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fsanchezlme97-ui/gp5-editor"
+  }
+}

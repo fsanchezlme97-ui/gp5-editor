@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>GP-5 live-edit probe</title></head>
+<body>
+<script src="lib/prst.js"></script>
+<script src="lib/webmidi_device.js"></script>
+<script src="lib/gp5_commands.js"></script>
+<script>
+// Live-edit check (npm run probe:edit): nudges AMP param 0 of the ACTIVE preset
+// in the pedal's working buffer, verifies it by read-back, then restores it.
+// Never writes/saves a preset.
+(async () => {
+  const log = (...a) => console.log(a.map((x) => (typeof x === "string" ? x : JSON.stringify(x))).join(" "));
+  const AMP = 3;
+  try {
+    await WebMidiDevice.connect();
+    const before = await WebMidiDevice.readActivePrst("probe");
+    const f0 = PRST.paramFloats(before)[AMP * 8];
+    const target = f0 >= 90 ? f0 - 5 : f0 + 5;
+    log(`AMP p0 before=${f0} -> ${target}`);
+    log("send", await WebMidiDevice.sendCommand(GP5Commands.setParam(AMP, 0, target)));
+    const mid = await WebMidiDevice.readActivePrst("probe");
+    const f1 = PRST.paramFloats(mid)[AMP * 8];
+    log(`read-back=${f1} ${Math.abs(f1 - target) < 1e-3 ? "OK (live edit works)" : "MISMATCH"}`);
+    log("restore", await WebMidiDevice.sendCommand(GP5Commands.setParam(AMP, 0, f0)));
+    const after = await WebMidiDevice.readActivePrst("probe");
+    const same = after.every((b, i) => b === before[i]);
+    log(`restored=${PRST.paramFloats(after)[AMP * 8]} buffer identical to start: ${same}`);
+    const on = !!((PRST.bypassMask(before) >> AMP) & 1);
+    log("toggle same state", await WebMidiDevice.sendCommand(GP5Commands.setBlockOn(AMP, on)));
+  } catch (e) { log("ERROR:", e.message); }
+  log("PROBE DONE");
+})();
+</script>
+</body>
+</html>
