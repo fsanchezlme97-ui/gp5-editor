@@ -1,4 +1,10 @@
-# GP-5 Editor
+<p align="center">
+  <img src="src/icon-512.png" alt="Logo de GP-5 Editor" width="140">
+</p>
+
+<h1 align="center">GP-5 Editor</h1>
+
+<p align="center">Editor web para el <b>Valeton GP-5</b> (y GP-50) por USB: edición en vivo, pedalboard visual y presets creados con IA.</p>
 
 > Derivado de **[valeton-gp50](https://github.com/drewmerc302/valeton-gp50)** de
 > [drewmerc302](https://github.com/drewmerc302). Su ingeniería inversa del protocolo MIDI del
@@ -6,8 +12,7 @@
 > GP-5, con edición en vivo, pedalboard visual, creación de presets con IA y soporte del protocolo
 > propio del GP-5 (guardar con `0x1A`, seleccionar con `0x43`).
 
-Editor web para el **Valeton GP-5** (y GP-50) por USB. Funciona en **Google Chrome o Microsoft
-Edge** (Web MIDI) en Windows, macOS y Linux.
+Funciona en **Google Chrome o Microsoft Edge** (Web MIDI) en Windows, macOS y Linux.
 
 | Sistema | Cómo se abre |
 | --- | --- |
@@ -25,6 +30,10 @@ portable: puedes copiarla a una memoria USB o a otro equipo.
 **Editor:** pedalboard con los 10 bloques y edición en vivo de cada parámetro.
 
 ![Editor con el pedalboard y los parámetros del amplificador](docs/screenshots/editor.png)
+
+**Guía de cada bloque:** debajo de los controles, un diagrama que cambia con los valores, la historia del modelo y qué hace cada perilla con su valor actual.
+
+<p align="center"><img src="docs/screenshots/guia.png" alt="Guía del bloque bajo el editor" width="480"></p>
 
 **Selector de modelos:** búsqueda por nombre o por el equipo real que imita.
 
@@ -47,7 +56,13 @@ Cierra **Valeton Suite** antes de abrir el editor: solo un programa puede usar e
   instante y se escucha de inmediato.
 - **Pedalboard visual**: los 10 bloques en el orden real de la señal, dibujados como el
   equipo que representan. Las perillas y los faders muestran los valores reales.
-- **Selector de modelos** con búsqueda por nombre del pedal o del equipo real ("fender", "klon"…).
+- **Guía de cada bloque**: un diagrama en vivo de lo que hace el bloque (se redibuja al mover las
+  perillas), quién hizo famoso el equipo original y qué hace cada control. Al pasar el ratón por una
+  barra se resalta su explicación.
+- **Selector de modelos** con búsqueda por nombre del pedal o del equipo real ("fender", "klon"…)
+  y una descripción breve de cada uno.
+- **Lista de presets** en bancos de diez, como en el pedal, con un punto ámbar en el preset que
+  tiene cambios sin guardar.
 - **Deshacer** (Ctrl+Z) y **volver al valor de fábrica** con doble clic en una barra.
 - **Subir presets**: uno o varios `.prst` (botón o arrastrando los archivos a la ventana).
   Puedes escucharlos sin guardar o escribirlos en slots del pedal; los de GP-50 se convierten solos.
@@ -108,6 +123,7 @@ npm run build        # genera dist/GP-5 Web/ (incluye GP-5 Web.exe)
 
 - `src/`: la app.
   - `app.js` · `ui/controls.js` · `ui/pedals.js` · `ui/icons.js` (generado con `npm run icons`).
+  - `ui/guide.js` + `ui/guide_data.js`: la Guía de cada bloque (diagramas y textos).
   - `ai.js` + `ai_providers.js` + `ui/ai_panel.js`: Crear con IA. `ai_providers.js` tiene un
     adaptador por proveedor (SDK de Anthropic, Gemini REST, Ollama y APIs compatibles con OpenAI) y
     todos devuelven el mismo JSON. Las llamadas van directas desde el navegador o, si el servicio
@@ -133,4 +149,4 @@ compatible. Úsalo bajo tu responsabilidad: haz un respaldo de tus presets antes
 - Protocolo y formato `.prst` basados en [drewmerc302/valeton-gp50](https://github.com/drewmerc302/valeton-gp50)
   (MIT, ver `LICENSE-valeton-gp50`).
 - Comandos de edición en vivo del GP-5 documentados por [helvecioneto/gp5-wc](https://github.com/helvecioneto/gp5-wc).
-- Iconos: [Heroicons](https://heroicons.com) (MIT). SDK de Anthropic: `@anthropic-ai/sdk` (MIT).
+- Iconos: [Heroicons](https://heroicons.com) (MIT). Fuente: [Inter](https://rsms.me/inter/) (OFL, ver `src/fonts/LICENSE-Inter.txt`). SDK de Anthropic: `@anthropic-ai/sdk` (MIT).
