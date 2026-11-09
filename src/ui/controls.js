@@ -37,19 +37,21 @@
     el.setAttribute("aria-label", name);
     el.setAttribute("aria-valuemin", min);
     el.setAttribute("aria-valuemax", max);
+    const trk = h("div", "trk");
     const fill = h("div", "fill");
+    const thumb = h("div", "thumb");
     const lbl = h("span", "lbl", name);
     const val = h("span", "val");
-    el.append(fill);
+    trk.append(fill);
     const bipolar = min < 0 && max > 0;
-    let zero = null;
     if (bipolar) {
       el.classList.add("bipolar");
-      zero = h("div", "zero");
+      const zero = h("div", "zero");
       zero.style.left = `${((0 - min) / (max - min)) * 100}%`;
-      el.append(zero);
+      trk.append(zero);
     }
-    el.append(lbl, val);
+    trk.append(thumb);
+    el.append(lbl, val, trk);
 
     const fmt = (v) => `${v.toFixed(dec)}${unit ? " " + unit : ""}`;
     function paint() {
@@ -62,6 +64,7 @@
         fill.style.left = "0";
         fill.style.width = `${f * 100}%`;
       }
+      thumb.style.left = `${f * 100}%`;
       val.textContent = fmt(value);
       el.setAttribute("aria-valuenow", value);
     }
@@ -75,26 +78,29 @@
       if (commit && opts.onCommit) opts.onCommit(value);
     }
 
-    // Drag: relative to the grab point so a click doesn't jump unexpectedly far.
+    // Position along the visible track (0..1), so the thumb lands under the pointer.
+    const fracAt = (x) => {
+      const r = trk.getBoundingClientRect();
+      return Math.min(1, Math.max(0, (x - r.left) / (r.width || 1)));
+    };
+    // Click jumps to the pointer; dragging follows it.
     let drag = null;
     el.addEventListener("pointerdown", (e) => {
       if (e.target === val || e.target.tagName === "INPUT" || e.button !== 0) return;
       el.focus();
       el.setPointerCapture(e.pointerId);
-      const r = el.getBoundingClientRect();
-      const f = (e.clientX - r.left) / r.width;
-      set(min + f * (max - min));
+      el.classList.add("dragging");
+      set(min + fracAt(e.clientX) * (max - min));
       drag = { id: e.pointerId };
     });
     el.addEventListener("pointermove", (e) => {
       if (!drag || drag.id !== e.pointerId) return;
-      const r = el.getBoundingClientRect();
-      const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-      set(min + f * (max - min));
+      set(min + fracAt(e.clientX) * (max - min));
     });
     const end = (e) => {
       if (!drag || drag.id !== e.pointerId) return;
       drag = null;
+      el.classList.remove("dragging");
       set(value, true);
     };
     el.addEventListener("pointerup", end);
@@ -285,7 +291,7 @@
           list.append(h("div", "pk-group", g));
           for (const m of ms) {
             const b = h("button", "pk-item" + (m.fxid === current ? " cur" : ""));
-            b.innerHTML = `<span class="pk-name">${escapeHtml(m.name)}</span>${m.official ? `<span class="pk-origin">${escapeHtml(m.official)}</span>` : ""}`;
+            b.innerHTML = `<span class="pk-line"><span class="pk-name">${escapeHtml(m.name)}</span>${m.official ? `<span class="pk-origin">${escapeHtml(m.official)}</span>` : ""}</span>${m.desc ? `<span class="pk-desc">${escapeHtml(m.desc)}</span>` : ""}`;
             b.onclick = () => close(m.fxid);
             list.append(b);
             items.push(b);

@@ -216,6 +216,16 @@
     $("#dirty").hidden = !v;
     $("#btn-save").hidden = !v;
     $("#btn-discard").hidden = !v;
+    $("#topbar").classList.toggle("is-dirty", v);
+    markDirtyPreset();
+  }
+  // Amber dot on the open preset in the list while it has unsaved edits.
+  function markDirtyPreset() {
+    const li = document.querySelector("#preset-list li.active");
+    if (!li) return;
+    const pip = li.querySelector(".pip");
+    if (S.dirty && !pip) { const p = h("span", "pip"); p.title = "Cambios sin guardar"; li.append(p); }
+    else if (!S.dirty && pip) pip.remove();
   }
 
   // Coalesce slider moves: only the latest value per param is sent, one
@@ -276,7 +286,7 @@
       S.patch = decode(S.prst);
       setDirty(true);
       renderChain();
-      if (blk === S.sel) $("#block-on").checked = on;
+      if (blk === S.sel) { $("#block-on").checked = on; paintBlockState(on); }
     } catch (e) { toast(`Error: ${e.message}`, "err"); }
   }
 
@@ -586,15 +596,23 @@
     const ul = $("#preset-list");
     const q = $("#search").value.trim().toLowerCase();
     ul.innerHTML = "";
+    let shown = 0;
     for (const { slot, name } of [...S.names].sort((a, z) => a.slot - z.slot)) {
-      if (q && !name.toLowerCase().includes(q) && !pad2(slot).includes(q)) continue;
+      const hay = isEmptyName(name) ? "vacío vacio" : name.toLowerCase();
+      if (q && !hay.includes(q) && !pad2(slot).includes(q)) continue;
+      // Banks of ten, like the pedal's own numbering (hidden while searching).
+      if (!q && slot % 10 === 0) ul.append(h("li", "grp", `${pad2(slot)} – ${pad2(slot + 9)}`));
       const li = h("li");
       if (slot === S.slot) li.classList.add("active");
-      if (isEmptyName(name)) li.classList.add("empty");
-      li.append(h("span", "num", pad2(slot)), h("span", "nm", name || "—"));
+      const empty = isEmptyName(name);
+      if (empty) li.classList.add("empty");
+      li.append(h("span", "num", pad2(slot)), h("span", "nm", empty ? "Vacío" : (name || "—")));
       li.onclick = () => selectPreset(slot);
       ul.append(li);
+      shown++;
     }
+    if (!shown) ul.append(h("li", "none", "Ningún preset coincide"));
+    markDirtyPreset();
     const act = ul.querySelector(".active");
     if (act) act.scrollIntoView({ block: "nearest" });
   }
@@ -625,7 +643,12 @@ Clic para editar · LED o pulsador para encender/apagar`;
   let chainFrame = 0;
   function scheduleChain() {
     if (chainFrame) return;
-    chainFrame = requestAnimationFrame(() => { chainFrame = 0; renderChain(); });
+    chainFrame = requestAnimationFrame(() => {
+      chainFrame = 0;
+      renderChain();
+      const b = S.patch.blocks[S.sel];
+      Guide.update({ ...b, model: shortModel(b) });
+    });
   }
 
   function renderEditor() {
@@ -635,25 +658,39 @@ Clic para editar · LED o pulsador para encender/apagar`;
     $("#model-name").textContent = shortModel(b);
     $("#model-origin").textContent = b.block === "N->S" ? "" : (b.official && b.official !== b.model ? b.official : (b.type || ""));
     $("#block-on").checked = b.active;
+    paintBlockState(b.active);
 
     const box = $("#params");
     box.innerHTML = "";
+    Guide.render($("#guide"), { ...b, model: shortModel(b) });
     if (!b.params.length) {
       box.append(h("div", "empty-params", "Este modelo no tiene parámetros."));
       return;
     }
     const k = S.sel;
     for (const p of b.params) {
+      let ctl;
       if (p.toggle) {
-        box.append(UI.toggleRow(p.name, Math.round(p.value) !== 0, (on) => queueParam(k, p.algId, on ? 1 : 0)));
+        ctl = UI.toggleRow(p.name, Math.round(p.value) !== 0, (on) => queueParam(k, p.algId, on ? 1 : 0));
       } else {
-        box.append(UI.slider({
+        ctl = UI.slider({
           name: p.name, value: p.value, min: p.min, max: p.max, step: p.step, unit: p.unit,
           defaultValue: defaultFor(b, p.algId),
           onInput: (v) => queueParam(k, p.algId, v),
-        }));
+        });
       }
+      // Hovering or focusing a control highlights its explanation in the guide.
+      const hl = () => Guide.focus(p.name);
+      ctl.addEventListener("pointerenter", hl);
+      ctl.addEventListener("focusin", hl);
+      box.append(ctl);
     }
+  }
+
+  function paintBlockState(on) {
+    const t = $("#block-state-text");
+    t.textContent = on ? "On" : "Off";
+    t.classList.toggle("on", !!on);
   }
 
   // Factory default of a parameter, from the model catalog.
@@ -680,7 +717,8 @@ Clic para editar · LED o pulsador para encender/apagar`;
 
   async function openPicker() {
     const b = S.patch.blocks[S.sel];
-    const models = S.lib.modelsForBlock(b.block, snaptoneList());
+    const models = S.lib.modelsForBlock(b.block, snaptoneList())
+      .map((m) => ({ ...m, desc: Guide.describe(m.fxid, b.block) }));
     const fxid = await UI.pickModel({ models, current: b.fxid });
     if (fxid == null || fxid === b.fxid) return;
     await setModel(S.sel, fxid);

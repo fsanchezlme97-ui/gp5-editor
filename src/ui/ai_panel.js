@@ -114,6 +114,17 @@
   };
   const fmtTime = (ms) => ms >= 60000 ? `${Math.floor(ms / 60000)} min ${Math.round((ms % 60000) / 1000)} s` : `${Math.round(ms / 1000)} s`;
 
+  // One parameter as a small meter (or an On/Off pill for switches).
+  function paramChip(p) {
+    if (p.toggle) {
+      const on = Math.round(p.value) !== 0;
+      return `<span class="ai-param tog${on ? " on" : ""}"><span class="ai-param-name">${esc(p.name)}</span><b>${on ? "On" : "Off"}</b></span>`;
+    }
+    const span = (p.max - p.min) || 1;
+    const f = Math.min(1, Math.max(0, (p.value - p.min) / span));
+    return `<span class="ai-param" style="--v:${f.toFixed(3)}"><span class="ai-param-name">${esc(p.name)}</span><b>${esc(p.display)}</b><span class="ai-param-bar"></span></span>`;
+  }
+
   function showResult() {
     const app = App();
     const s = session;
@@ -160,7 +171,7 @@
       body.innerHTML = `<div class="ai-block-head"><span class="ai-block-name">${esc(app.shortModel(b))}</span>
           <span class="ai-block-origin">${esc(BLOCK_TITLE[b.block] || b.block)}${origin ? " · " + esc(origin) : ""}</span></div>
         ${why && why.why ? `<p class="ai-block-why">${esc(why.why)}</p>` : ""}
-        <div class="ai-params">${b.params.map((p) => `<span>${esc(p.name)} <b>${esc(p.display)}</b></span>`).join("")}</div>`;
+        <div class="ai-params">${b.params.map(paramChip).join("")}</div>`;
       card.append(badge, body);
       box.append(card);
       cards[k] = card;
@@ -338,6 +349,9 @@
     if (id === PV.settings.provider()) renderProviderSummary();
   };
   $("#ai-go").onclick = () => run();
+  document.querySelectorAll(".ai-chip[data-song]").forEach((b) => {
+    b.onclick = () => { $("#ai-song").value = b.dataset.song; $("#ai-song").focus(); };
+  });
   $("#ai-song").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
   $("#ai-cancel").onclick = () => { if (aborter) aborter.abort(); };
   $("#ai-listen").onclick = listen;

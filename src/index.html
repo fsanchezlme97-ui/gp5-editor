@@ -70,14 +70,21 @@
         <div class="welcome-card">
           <img class="welcome-logo" src="icon-256.png" alt="" width="128" height="128">
           <h1>Conecta tu Valeton GP-5</h1>
-          <p id="welcome-msg">Conecta el pedal por USB. Si Valeton Suite está abierto, ciérralo: solo una app puede usar el puerto MIDI a la vez.</p>
+          <p id="welcome-msg">El editor lee y edita los presets del pedal en tiempo real.</p>
+          <ol class="welcome-steps">
+            <li><span>Conecta el pedal al ordenador con el cable <b>USB</b>.</span></li>
+            <li><span>Cierra <b>Valeton Suite</b> si está abierto: solo una app puede usar el puerto MIDI a la vez.</span></li>
+            <li><span>Pulsa <b>Conectar</b> y acepta el permiso de <b>dispositivos MIDI</b> del navegador.</span></li>
+          </ol>
           <button id="btn-connect" class="btn primary"><i data-icon="bolt"></i><span>Conectar</span></button>
         </div>
       </section>
 
       <section id="workspace" hidden>
         <div id="board">
+          <span class="io in" title="Entrada de guitarra">IN</span>
           <div id="chain" aria-label="Cadena de efectos"></div>
+          <span class="io out" title="Salida">OUT</span>
         </div>
 
         <div id="editor" class="card">
@@ -91,16 +98,20 @@
                 <i data-icon="chevron-down" class="caret"></i>
               </button>
             </div>
-            <label class="switch big" title="Encender / apagar bloque (Espacio)">
-              <input id="block-on" type="checkbox">
-              <span class="track"><span class="thumb"></span></span>
-            </label>
+            <div class="block-state">
+              <span id="block-state-text" class="block-state-text"></span>
+              <label class="switch big" title="Encender / apagar bloque (Espacio)">
+                <input id="block-on" type="checkbox" aria-label="Bloque encendido">
+                <span class="track"><span class="thumb"></span></span>
+              </label>
+            </div>
           </div>
           <div id="params"></div>
+          <div id="guide" class="guide"></div>
         </div>
 
         <div id="patch-settings" class="card">
-          <div class="ps-title">Preset</div>
+          <div class="card-title"><i data-icon="adjustments-vertical"></i><span>Ajustes del preset</span></div>
           <div id="ps-params"></div>
           <p class="hint"><i data-icon="information-circle"></i><span>Volumen, BPM y nombre se aplican al pulsar <b>Guardar en el pedal</b>. Los cambios de efectos se escuchan al instante.</span></p>
         </div>
@@ -134,7 +145,10 @@
   <div id="ai" class="overlay" hidden>
     <div class="ai-card">
       <div class="ai-head">
-        <div class="ai-title"><i data-icon="sparkles"></i><span>Crear preset con IA</span></div>
+        <div class="ai-title">
+          <span class="ai-title-ico"><i data-icon="sparkles"></i></span>
+          <div><div>Crear preset con IA</div><div class="ai-subtitle">Diseña un preset para tu GP-5 a partir de una canción, artista o sonido</div></div>
+        </div>
         <button id="ai-close" class="btn icon" title="Cerrar (Esc)"><i data-icon="x-mark"></i></button>
       </div>
 
@@ -161,8 +175,17 @@
         </div>
 
         <div id="ai-form">
-          <label class="field"><span>Canción, artista o sonido</span>
-            <input id="ai-song" class="ai-input" placeholder="Ej.: Comfortably Numb (solo) - Pink Floyd" autocomplete="off"></label>
+          <label class="field ai-song-field"><span>Canción, artista o sonido</span>
+            <span class="ai-song-wrap"><i data-icon="musical-note" class="ai-song-ico"></i>
+            <input id="ai-song" class="ai-input" placeholder="Ej.: Comfortably Numb (solo) - Pink Floyd" autocomplete="off"></span></label>
+          <div class="ai-examples" aria-label="Ejemplos">
+            <span class="ai-examples-lbl">Prueba con</span>
+            <button type="button" class="ai-chip" data-song="Comfortably Numb (solo) - Pink Floyd">Comfortably Numb · solo</button>
+            <button type="button" class="ai-chip" data-song="Back in Black - AC/DC">Back in Black</button>
+            <button type="button" class="ai-chip" data-song="Pride and Joy - Stevie Ray Vaughan">Pride and Joy</button>
+            <button type="button" class="ai-chip" data-song="Where the Streets Have No Name (intro) - U2">Streets Have No Name · intro</button>
+            <button type="button" class="ai-chip" data-song="Master of Puppets (riff) - Metallica">Master of Puppets · riff</button>
+          </div>
           <div class="ai-row">
             <label class="field"><span>Pastillas de tu guitarra</span>
               <select id="ai-pickups">
@@ -191,6 +214,7 @@
         </div>
 
         <div id="ai-result" hidden>
+          <div class="ai-hero">
           <div class="ai-res-head">
             <div>
               <div id="ai-res-name" class="ai-res-name"></div>
@@ -200,6 +224,7 @@
           </div>
           <div id="ai-res-meta" class="ai-meta"></div>
           <p id="ai-res-summary" class="ai-summary"></p>
+          </div>
           <div class="ai-notes">
             <div id="ai-gear" class="ai-note" hidden>
               <div class="ai-note-title"><i data-icon="musical-note"></i><span>Equipo original</span></div>
@@ -214,14 +239,17 @@
           <p id="ai-warn" class="ai-warn" hidden></p>
           <div class="ai-section-title">Detalle de la cadena</div>
           <div id="ai-blocks" class="ai-blocks"></div>
-          <div class="ai-inline">
-            <input id="ai-refine" class="ai-input" placeholder="Ajustar: más ganancia, menos reverb, delay más largo…" autocomplete="off">
-            <button id="ai-refine-go" class="btn">Ajustar</button>
-          </div>
-          <div class="ai-actions">
-            <label class="ai-dest"><span>Destino</span><select id="ai-slot-res"></select></label>
-            <button id="ai-listen" class="btn" title="Carga el preset en el pedal sin guardarlo">Escuchar sin guardar</button>
-            <button id="ai-save" class="btn primary"><i data-icon="check"></i><span>Guardar en el pedal</span></button>
+          <div class="ai-footer">
+            <div class="ai-inline">
+              <span class="ai-refine-wrap"><i data-icon="sparkles" class="ai-refine-ico"></i>
+              <input id="ai-refine" class="ai-input" placeholder="Ajustar: más ganancia, menos reverb, delay más largo…" autocomplete="off"></span>
+              <button id="ai-refine-go" class="btn">Ajustar</button>
+            </div>
+            <div class="ai-actions">
+              <label class="ai-dest"><span>Destino</span><select id="ai-slot-res"></select></label>
+              <button id="ai-listen" class="btn" title="Carga el preset en el pedal sin guardarlo"><i data-icon="musical-note"></i><span>Escuchar sin guardar</span></button>
+              <button id="ai-save" class="btn primary"><i data-icon="check"></i><span>Guardar en el pedal</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -240,6 +268,8 @@
   <script src="lib/webmidi_write.js"></script>
   <script src="lib/gp5_commands.js"></script>
   <script src="ui/controls.js"></script>
+  <script src="ui/guide_data.js"></script>
+  <script src="ui/guide.js"></script>
   <script src="platform.js"></script>
   <script src="ui/pedals.js"></script>
   <script src="lib/anthropic-sdk.js"></script>
